@@ -1,0 +1,99 @@
+# ============================================================
+# Terraform
+# ============================================================
+
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Terraform variable files
+terraform.tfvars
+terraform.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
+
+# Terraform plans
+*.tfplan
+*.plan
+
+
+# ============================================================
+# OCI / Credentials / Secrets
+# ============================================================
+
+.oci/
+oci_config
+oci_api_key*
+*.pem
+*.key
+*.p12
+*.pfx
+
+# SSH private keys
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+*.pub
+
+
+# ============================================================
+# OKD / OpenShift generated secrets
+# ============================================================
+
+*.ign
+*.ignition
+
+pull-secret.json
+pull-secret.txt
+install-config.yaml
+
+
+# ============================================================
+# Environment / Secrets
+# ============================================================
+
+.env
+.env.*
+!.env.example
+
+
+# ============================================================
+# Logs / Temporary files
+# ============================================================
+
+*.log
+/tmp/
+/tmp
+*.tmp
+*.swp
+*.swo
+
+
+# ============================================================
+# OS / Editor
+# ============================================================
+
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+
+# ============================================================
+# Python
+# ============================================================
+
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Office temporary lock files
+.~lock.*#
+*.docx
+
+# Local keys - never commit
+keys/
