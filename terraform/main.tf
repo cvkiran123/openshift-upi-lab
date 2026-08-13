@@ -31,12 +31,19 @@ module "loadbalancer" {
 
   # Listener
   api_listener_name = var.api_listener_name
+
+  # Backend IPs
+  api_backends = {
+    master-1 = module.compute.private_ips["master-1"]
+    master-2 = module.compute.private_ips["master-2"]
+    master-3 = module.compute.private_ips["master-3"]
+  }
 }
 
 
 
 # Compute Instance
-module "bootstrap" {
+module "compute" {
 
   source = "./modules/compute"
 

@@ -26,3 +26,9 @@ variable "api_listener_name" {
   description = "Name of the API Listener"
   type        = string
 }
+
+# Backend Variables
+variable "api_backends" {
+  description = "Map of API Backend IP addresses"
+  type        = map(string)
+}
