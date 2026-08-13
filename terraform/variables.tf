@@ -114,6 +114,17 @@ variable "bootstrap_hostname" {
   type = string
 }
 
+# Map of node configurations
+variable "nodes" {
+  type = map(object({
+    shape            = string
+    ocpus            = number
+    memory_in_gbs    = number
+    assign_public_ip = bool
+    hostname_label   = string
+  }))
+}
+
 # DNS Variables
 
 variable "zone_name" {
@@ -127,3 +138,4 @@ variable "cluster_name" {
 variable "resolver_id" {
   type = string
 }
+

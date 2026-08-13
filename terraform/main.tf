@@ -52,6 +52,8 @@ module "bootstrap" {
   hostname_label   = var.bootstrap_hostname
 
   ssh_public_key = var.ssh_public_key
+
+  nodes = var.nodes
 }
 
 # DNS Zone
@@ -64,6 +66,6 @@ module "dns" {
   cluster_name = var.cluster_name
 
   load_balancer_ip = module.loadbalancer.load_balancer_ip
-  vcn_id = module.network.vcn_id
-  resolver_id = var.resolver_id
+  vcn_id           = module.network.vcn_id
+  resolver_id      = var.resolver_id
 }
