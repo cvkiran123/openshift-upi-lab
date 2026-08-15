@@ -49,14 +49,8 @@ module "compute" {
 
   compartment_ocid    = var.compartment_ocid
   availability_domain = var.availability_domain
-
-  instance_name     = var.bootstrap_name
-  instance_shape    = var.instance_shape
-  coreos_image_ocid = var.coreos_image_ocid
-
-  subnet_id        = module.network.public_subnet_id
-  assign_public_ip = false
-  hostname_label   = var.bootstrap_hostname
+  coreos_image_ocid   = var.coreos_image_ocid
+  subnet_id           = module.network.public_subnet_id
 
   ssh_public_key = var.ssh_public_key
 
