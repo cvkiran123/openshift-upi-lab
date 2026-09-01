@@ -38,3 +38,16 @@ variable "public_subnet_dns" {
   description = "DNS label for the public subnet."
   type        = string
 }
+
+variable "private_subnet_name" {
+  description = "Name of the private subnet."
+  type        = string
+}
+variable "private_subnet_cidr" {
+  description = "CIDR block for the private subnet."
+  type        = string
+}
+variable "private_subnet_dns" {
+  description = "DNS label for the private subnet."
+  type        = string
+}

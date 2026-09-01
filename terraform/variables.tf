@@ -69,12 +69,32 @@ variable "public_subnet_dns" {
   type = string
 }
 
+variable "private_subnet_name" {
+  type = string
+}
+
+variable "private_subnet_cidr" {
+  type = string
+}
+
+variable "private_subnet_dns" {
+  type = string
+}
+
 variable "load_balancer_name" {
   type = string
 }
 
 variable "load_balancer_shape" {
   type = string
+}
+
+variable "lb_min_bandwidth" {
+  type = number
+}
+
+variable "lb_max_bandwidth" {
+  type = number
 }
 
 # Backend Set Variables
@@ -86,7 +106,16 @@ variable "api_backend_set_name" {
 variable "api_listener_name" {
   type = string
 }
-
+# Machine Config Server Backend Set
+variable "mcs_backend_set_name" {
+  description = "Name of the Machine Config Server backend set"
+  type        = string
+}
+# Machine Config Server Listener
+variable "mcs_listener_name" {
+  description = "Name of the Machine Config Server listener"
+  type        = string
+}
 
 
 # Compute Instance Variables
@@ -139,3 +168,32 @@ variable "resolver_id" {
   type = string
 }
 
+variable "image_object_name" {
+  type = string
+}
+
+# Custom Image Variables
+variable "local_image_path" {
+  type = string
+}
+
+# Ignition Variables
+variable "bootstrap_ignition_path" {
+  description = "Path to the OKD bootstrap Ignition configuration"
+  type        = string
+}
+
+variable "master_ignition_path" {
+  description = "Path to the OKD master Ignition configuration"
+  type        = string
+}
+
+variable "worker_ignition_path" {
+  description = "Path to the OKD worker Ignition configuration"
+  type        = string
+}
+
+variable "bastion_private_ip" {
+  description = "Private IP address of the bastion host"
+  type        = string
+}

@@ -17,8 +17,6 @@ terraform.tfvars.json
 # Terraform plans
 *.tfplan
 *.plan
-
-
 # ============================================================
 # OCI / Credentials / Secrets
 # ============================================================
@@ -37,10 +35,8 @@ id_rsa.*
 id_ed25519
 id_ed25519.*
 *.pub
-
-
 # ============================================================
-# OKD / OpenShift generated secrets
+# OKD / OpenShift generated files and secrets
 # ============================================================
 
 *.ign
@@ -49,6 +45,24 @@ id_ed25519.*
 pull-secret.json
 pull-secret.txt
 install-config.yaml
+.openshift_install_state.json
+
+kubeconfig
+auth/
+
+# OpenShift installation directory
+okd-install/
+
+
+# ============================================================
+# OpenShift / Lab generated artifacts
+# ============================================================
+
+artifacts/
+bastion-backup/
+
+# Local command notes
+cmd.txt
 
 
 # ============================================================
@@ -91,9 +105,17 @@ __pycache__/
 .venv/
 venv/
 
-# Office temporary lock files
+
+# ============================================================
+# Office temporary files
+# ============================================================
+
 .~lock.*#
 *.docx
 
-# Local keys - never commit
+
+# ============================================================
+# Local keys
+# ============================================================
+
 keys/

@@ -10,7 +10,11 @@ variable "coreos_image_ocid" {
   type = string
 }
 
-variable "subnet_id" {
+variable "public_subnet_id" {
+  type = string
+}
+
+variable "private_subnet_id" {
   type = string
 }
 
@@ -30,4 +34,16 @@ variable "nodes" {
   }))
 }
 
+# Ignition Configurations
+variable "master_ignition_path" {
+  type = string
+}
 
+variable "worker_ignition_path" {
+  type = string
+}
+
+variable "bastion_private_ip" {
+  description = "Private IP address of the bastion host"
+  type        = string
+}

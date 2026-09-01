@@ -14,6 +14,15 @@ output "private_ips" {
   }
 }
 
+output "bastion_public_ip" {
+  value = oci_core_instance.compute["bastion"].public_ip
+}
+
+output "bastion_private_ip" {
+  description = "Private IP address of the bastion host"
+  value       = oci_core_instance.compute["bastion"].private_ip
+}
+
 output "display_names" {
   description = "Display names of all compute instances"
   value = {

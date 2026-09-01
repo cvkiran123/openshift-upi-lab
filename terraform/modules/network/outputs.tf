@@ -22,3 +22,8 @@ output "internet_gateway_id" {
   description = "Internet Gateway ID"
   value       = oci_core_internet_gateway.okd_igw.id
 }
+
+output "private_subnet_id" {
+  description = "Private Subnet ID"
+  value       = oci_core_subnet.okd_private_subnet.id
+}

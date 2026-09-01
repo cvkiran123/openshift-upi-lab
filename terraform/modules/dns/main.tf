@@ -3,6 +3,7 @@ resource "oci_dns_zone" "zone" {
   compartment_id = var.compartment_ocid
   name           = var.zone_name
   zone_type      = "PRIMARY"
+  scope          = "PRIVATE"
 
   view_id = oci_dns_view.okd_private_view.id #private view for the zone
 }
