@@ -588,3 +588,218 @@ Master-1 / Master-2 / Master-3
 ```
 
 The Bootstrap node is therefore a **temporary installation component**, while the three Master nodes form the permanent OKD control plane.
+
+
+## Control Plane / Master Nodes
+
+The OKD control plane consists of three Master nodes that provide the core Kubernetes and OKD management functions.
+
+![Control-Plane Server Architecture](diagrams/Control-PLane.png)
+
+In this UPI deployment:
+
+- Three Master nodes were created using Terraform.
+- All Master nodes are located in the private subnet.
+- The Master nodes form the highly available OKD control plane.
+- The OCI Load Balancer distributes API traffic across the Master nodes.
+- Kubernetes API Server listens on port `6443`.
+- Machine Config Server (MCS) listens on port `22623`.
+- The Master nodes communicate with the Worker nodes to manage cluster workloads.
+
+### Control Plane Architecture
+
+```text
+                    OCI Load Balancer
+                     /            \
+                  6443            22623
+                   │                │
+                   └───────┬────────┘
+                           │
+                ┌──────────┼──────────┐
+                ▼          ▼          ▼
+             Master-1   Master-2   Master-3
+            10.0.2.178  10.0.2.143 10.0.2.21
+                │          │          │
+                └──────────┼──────────┘
+                           │
+                    OKD Control Plane
+```
+
+### Master Node Responsibilities
+
+The Master nodes provide:
+
+- Kubernetes API Server
+- Cluster state and control-plane management
+- Scheduling and orchestration
+- Machine Config Server
+- Cluster configuration and coordination
+
+The three Master nodes provide redundancy so that the OKD control plane does not depend on a single Master node.
+
+
+## Worker Nodes and OKD Ingress Controller
+
+The Worker nodes run application workloads. OKD's built-in Ingress Controller (`router-default`) handles external HTTP/HTTPS traffic and routes requests to the appropriate application Service.
+
+![Worker and Ingress Controller](diagrams/Worker-and-Ingress-Controller.png)
+
+In this UPI deployment:
+
+- Two Worker nodes were provisioned using Terraform.
+- Both Workers are located in the private subnet.
+- The OKD Ingress Controller runs on the Worker nodes.
+- The OCI Load Balancer forwards application traffic on ports `80` and `443` to the Worker nodes.
+- The Ingress Controller routes incoming requests to the appropriate OKD Service and application Pods.
+
+### Worker and Ingress Flow
+
+```text
+Client
+  │
+  │ HTTP / HTTPS
+  ▼
+OCI Load Balancer
+  │
+  │ 80 / 443
+  ▼
+Worker Nodes
+  │
+  ▼
+OKD Ingress Controller
+(router-default)
+  │
+  ▼
+Service
+  │
+  ▼
+Application Pod
+```
+
+### Worker Nodes
+
+```text
+                 OKD Cluster
+                     │
+              Worker Nodes
+                /       \
+               ▼         ▼
+          Worker-1    Worker-2
+          10.0.2.81   10.0.2.24
+               │         │
+               └────┬────┘
+                    ▼
+          OKD Ingress Controller
+             (router-default)
+```
+
+## Machine Config Server (MCS)
+
+The Machine Config Server (MCS) is part of the OKD control plane and provides machine configuration information to nodes during cluster operation and configuration changes.
+
+![Machine Config Server Architecture](diagrams/MCS.png)
+
+In this UPI deployment:
+
+- MCS runs as part of the OKD control plane.
+- The MCS endpoint is exposed through port `22623`.
+- The OCI Load Balancer forwards MCS traffic to the Master nodes.
+- Bootstrap and Worker nodes use the control plane services during cluster initialization and configuration.
+
+### MCS Traffic Flow
+
+```text
+Bootstrap / Worker Node
+          │
+          │ TCP 22623
+          ▼
+   OCI Load Balancer
+          │
+          ▼
+   Master Nodes
+          │
+          ▼
+Machine Config Server
+```
+
+## End-to-End Installation and Data Flow
+
+The following flow summarizes how the OKD UPI cluster was provisioned and how traffic flows through the deployed infrastructure.
+
+### Infrastructure and Installation Flow
+
+```text
+Terraform
+    │
+    ▼
+OCI Infrastructure
+    │
+    ├── VCN / Subnets
+    ├── Bastion
+    ├── Load Balancer
+    ├── Bootstrap
+    ├── Master Nodes
+    └── Worker Nodes
+             │
+             ▼
+        OKD Installation
+             │
+             ▼
+       Bootstrap Node
+             │
+             ▼
+       Control Plane
+     (3 Master Nodes)
+             │
+             ▼
+        Worker Nodes
+             │
+             ▼
+    OKD Ingress Controller
+```
+
+### Application Traffic Flow
+
+```text
+Client
+  │
+  │ console-openshift-console.apps.okd.ocp.lab
+  │ oauth-openshift.apps.okd.ocp.lab
+  │ <application>.apps.okd.ocp.lab
+  ▼
+OCI Private DNS
+  │
+  ▼
+OCI Load Balancer
+  │
+  │ HTTP / HTTPS
+  ▼
+Worker Nodes
+  │
+  ▼
+OKD Ingress Controller
+(router-default)
+  │
+  ▼
+Service
+  │
+  ▼
+Application Pod
+```
+
+### Control Plane Traffic
+
+```text
+OKD Client / Node
+       │
+       ▼
+OCI Load Balancer
+       │
+       ├── TCP 6443  → Master Nodes
+       │                 (Kubernetes API)
+       │
+       └── TCP 22623 → Master Nodes
+                         (Machine Config Server)
+```
+
+This architecture separates infrastructure provisioning from OKD installation while using OCI networking and load balancing to provide connectivity and high availability for the OKD cluster.
