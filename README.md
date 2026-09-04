@@ -541,7 +541,8 @@ OKD Ingress Controller
 
 DNS resolution can be verified using:
 
-dig +short api.okd.ocp.lab
+dig +short api.okd.ocp.lab 
+
 dig +short console-openshift-console.apps.okd.ocp.lab
 
 The application hostname should resolve to the OCI Load Balancer IP used for external application access.
