@@ -307,7 +307,7 @@ Traffic and Routing
 Private OKD nodes do not require public IP addresses for normal cluster operation.
 
 Outbound internet connectivity from the private subnet is provided through the NAT Gateway, while external API and application traffic enters through the OCI Load Balancer.
-
+```text
 External Client
       │
       ▼
@@ -323,8 +323,7 @@ NAT Gateway
       │
       ▼
 Internet
-
-Network Design
+```
 
 ### Network Design
 
