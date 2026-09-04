@@ -259,5 +259,80 @@ OCI VCN
     ├── Worker-1
     └── Worker-2
 ```
+The Bootstrap node is temporary and is removed after the OKD control plane completes the bootstrap process.
 
+## OCI Network Architecture
+
+The OKD cluster is deployed inside an OCI Virtual Cloud Network (VCN) using separate public and private subnets.
+
+![OCI Network Architecture](diagrams/Network%20Architecture.png)
+
+### Network Components
+
+| Component | Configuration | Purpose |
+|---|---|---|
+| **VCN** | `10.0.0.0/16` | Provides the network boundary for the OKD environment |
+| **Public Subnet** | `10.0.1.0/24` | Hosts the Bastion and public-facing Load Balancer |
+| **Private Subnet** | `10.0.2.0/24` | Hosts Bootstrap, Control Plane and Worker nodes |
+| **Internet Gateway** | OCI Internet Gateway | Provides internet connectivity for resources using the public route |
+| **NAT Gateway** | OCI NAT Gateway | Provides outbound internet access for private subnet resources |
+| **Route Tables** | Public / Private routing | Controls traffic leaving and entering the respective subnets |
+| **Security Lists / NSGs** | OCI network security rules | Controls permitted inbound and outbound traffic |
+
+### Network Layout
+
+```text
+                         OCI VCN
+                      10.0.0.0/16
+                           │
+              ┌────────────┴────────────┐
+              │                         │
+       Public Subnet              Private Subnet
+        10.0.1.0/24                10.0.2.0/24
+              │                         │
+       ┌──────┴──────┐        ┌─────────┴─────────┐
+       │             │        │                   │
+    Bastion       OCI LB   Bootstrap          OKD Nodes
+                             │             ┌──────┴──────┐
+                             │             │             │
+                          Temporary      Masters      Workers
+                         bootstrap.ign     ×3           ×2
+                             │
+                             └── HTTP :8080
+                                 from Bastion
+```
+
+Traffic and Routing
+
+Private OKD nodes do not require public IP addresses for normal cluster operation.
+
+Outbound internet connectivity from the private subnet is provided through the NAT Gateway, while external API and application traffic enters through the OCI Load Balancer.
+
+External Client
+      │
+      ▼
+OCI Load Balancer
+      │
+      ▼
+Private OKD Nodes
+
+Private OKD Node
+      │
+      ▼
+NAT Gateway
+      │
+      ▼
+Internet
+
+Network Design
+
+### Network Design
+
+The network separation provides:
+
+- Controlled external access through the OCI Load Balancer
+- Administrative access through the Bastion host
+- Private networking for Bootstrap, Control Plane, and Worker nodes
+- Outbound internet access for private nodes through the NAT Gateway
+- Network-level traffic control using OCI Security Lists and NSGs
 
