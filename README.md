@@ -523,9 +523,9 @@ The wildcard record:
 allows different OKD Routes to use their own hostnames while resolving to the same Load Balancer.
 
 For example:
+
 console-openshift-console.apps.okd.ocp.lab
 oauth-openshift.apps.okd.ocp.lab
-
 <application>.apps.okd.ocp.lab
         │
         ▼
@@ -536,6 +536,12 @@ OCI Load Balancer
         │
         ▼
 OKD Ingress Controller
+        │
+        ▼
+Application Service
+        │
+        ▼
+Application Pod
 
 *DNS Validation*
 
