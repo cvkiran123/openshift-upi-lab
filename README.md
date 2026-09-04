@@ -165,3 +165,55 @@ terraform/
 | `bootstrap`      | Creates the temporary Bootstrap instance used during the UPI installation                            |
 | `custom-image`   | Creates the OCI custom image used for the OKD nodes                                                  |
 | `object-storage` | Stores the OKD OS image used by the custom image workflow                                            |
+
+
+## Why UPI?
+
+**User-Provisioned Infrastructure (UPI)** separates infrastructure provisioning from the OKD installation process.
+
+In this project, **Terraform is responsible for provisioning the OCI infrastructure**, while the OKD installer and Ignition configuration
+ are used to install and configure the cluster on the provisioned nodes.
+
+### UPI Responsibilities
+
+```text
+Terraform
+    │
+    ├── VCN / Subnets
+    ├── Routing
+    ├── Security
+    ├── DNS
+    ├── Load Balancer
+    ├── Bastion
+    ├── Bootstrap
+    ├── Control Plane
+    └── Worker Nodes
+             │
+             ▼
+        OCI Infrastructure
+```
+The OKD installation process then configures the provisioned machines:
+
+OCI Infrastructure
+        │
+        ▼
+OKD Ignition Configuration
+        │
+        ├── Bootstrap
+        ├── Control Plane
+        └── Workers
+                │
+                ▼
+          OKD Cluster
+
+### UPI vs Infrastructure Automation
+
+The key separation in this project is:
+
+| Layer | Tool / Component | Responsibility |
+|---|---|---|
+| Infrastructure | Terraform | Provision OCI resources |
+| Operating System | OCI Custom Image | Provide the base OS for OKD nodes |
+| Initial Configuration | Ignition | Configure the OKD nodes |
+| Cluster Installation | OKD Installer | Bootstrap and install the OKD cluster |
+| Cluster Management | OKD / Kubernetes | Manage nodes, workloads and services |
