@@ -557,3 +557,34 @@ dig +short api.okd.ocp.lab
 dig +short console-openshift-console.apps.okd.ocp.lab
 
 The application hostname should resolve to the OCI Load Balancer IP used for external application access.
+
+
+## Bootstrap Node
+
+The Bootstrap node is a temporary node used during the initial OKD cluster installation.
+
+In this UPI deployment:
+
+- The Bootstrap node was created in the private subnet.
+- The Bootstrap node retrieved `bootstrap.ign` from the Bastion host.
+- The ignition configuration was served temporarily from the Bastion using HTTP port `8080`.
+- The Bootstrap node helped initialize the OKD control plane.
+- After the control plane became operational, the Bootstrap node was no longer required.
+
+### Bootstrap Flow
+
+```text
+Bastion Host
+10.0.1.173:8080
+        │
+        │ bootstrap.ign
+        ▼
+Bootstrap Node
+10.0.2.132
+        │
+        ▼
+OKD Control Plane
+Master-1 / Master-2 / Master-3
+```
+
+The Bootstrap node is therefore a **temporary installation component**, while the three Master nodes form the permanent OKD control plane.
