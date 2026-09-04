@@ -217,3 +217,47 @@ The key separation in this project is:
 | Initial Configuration | Ignition | Configure the OKD nodes |
 | Cluster Installation | OKD Installer | Bootstrap and install the OKD cluster |
 | Cluster Management | OKD / Kubernetes | Manage nodes, workloads and services |
+
+## OKD Cluster Topology
+
+The OKD cluster was deployed using the following node architecture:
+
+| Node / Component | Count | Purpose |
+|---|---:|---|
+| Bastion | 1 | Administrative access and temporary Bootstrap Ignition HTTP server |
+| Bootstrap | 1 | Temporary node used during initial OKD cluster bootstrap |
+| Control Plane | 3 | Provides the highly available OKD control plane |
+| Worker | 2 | Runs application workloads and OKD Ingress Controller pods |
+
+### Node Layout
+
+| Node | Role | Network |
+|---|---|---|
+| Bastion | Administration / Bootstrap Ignition server | Public Subnet |
+| Bootstrap | Temporary cluster bootstrap | Private Subnet |
+| Master-1 | Control Plane | Private Subnet |
+| Master-2 | Control Plane | Private Subnet |
+| Master-3 | Control Plane | Private Subnet |
+| Worker-1 | Worker / Ingress | Private Subnet |
+| Worker-2 | Worker / Ingress | Private Subnet |
+
+### Network Placement
+
+The Bastion is placed in the public subnet, while the Bootstrap, Control Plane and Worker nodes are placed in the same private subnet.
+
+```text
+OCI VCN
+│
+├── Public Subnet
+│   └── Bastion
+│
+└── Private Subnet
+    ├── Bootstrap
+    ├── Master-1
+    ├── Master-2
+    ├── Master-3
+    ├── Worker-1
+    └── Worker-2
+```
+
+
