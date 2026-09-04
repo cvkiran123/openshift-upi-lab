@@ -307,6 +307,7 @@ Traffic and Routing
 Private OKD nodes do not require public IP addresses for normal cluster operation.
 
 Outbound internet connectivity from the private subnet is provided through the NAT Gateway, while external API and application traffic enters through the OCI Load Balancer.
+
 ```text
 External Client
       │
@@ -415,3 +416,88 @@ OCI Load Balancer
        │
        └── :443 ──→ Worker Nodes
 ```
+
+## DNS
+
+OCI Private DNS is used to provide DNS resolution for the OKD cluster API and application endpoints.
+
+![DNS Architecture](diagrams/DNS.png)
+
+### DNS Records
+
+| DNS Record | Purpose | Resolves To |
+|---|---|---|
+| `api.okd.ocp.lab` | OKD API endpoint | OCI Load Balancer |
+| `api-int.okd.ocp.lab` | Internal OKD API endpoint | Control Plane / API Load Balancer |
+| `*.apps.okd.ocp.lab` | OKD application routes | OCI Load Balancer |
+
+### Application DNS Flow
+
+```text
+User
+  │
+  │ console-openshift-console.apps.okd.ocp.lab
+  ▼
+OCI Private DNS
+  │
+  │ Resolves to Load Balancer IP
+  ▼
+OCI Load Balancer
+  │
+  ▼
+Worker Nodes
+  │
+  ▼
+OKD Ingress Controller
+  │
+  ▼
+Application
+```
+*API DNS Flow*
+```text
+OKD Client
+  │
+  │ api.okd.ocp.lab
+  ▼
+OCI Private DNS
+  │
+  │ Resolves to Load Balancer IP
+  ▼
+OCI Load Balancer :6443
+  │
+  ├── Master-1
+  ├── Master-2
+  └── Master-3
+```
+
+Wildcard Application DNS
+
+The wildcard record:
+
+*.apps.okd.ocp.lab
+
+allows different OKD Routes to use their own hostnames while resolving to the same Load Balancer.
+
+For example:
+console-openshift-console.apps.okd.ocp.lab
+oauth-openshift.apps.okd.ocp.lab
+
+<application>.apps.okd.ocp.lab
+        │
+        ▼
+OCI Private DNS
+        │
+        ▼
+OCI Load Balancer
+        │
+        ▼
+OKD Ingress Controller
+
+*DNS Validation*
+
+DNS resolution can be verified using:
+
+dig +short api.okd.ocp.lab
+dig +short console-openshift-console.apps.okd.ocp.lab
+
+The application hostname should resolve to the OCI Load Balancer IP used for external application access.
