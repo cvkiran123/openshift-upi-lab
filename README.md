@@ -336,3 +336,83 @@ The network separation provides:
 - Outbound internet access for private nodes through the NAT Gateway
 - Network-level traffic control using OCI Security Lists and NSGs
 
+## Load Balancer
+
+The OCI Load Balancer provides external access to both the OKD API and application workloads.
+
+![Load Balancer](diagrams/LoadBalancer.png)
+
+### Load Balancer Configuration
+
+| Listener | Port | Backend | Purpose |
+|---|---:|---|---|
+| API | `6443` | Control Plane nodes | OKD / Kubernetes API access |
+| HTTP | `80` | Worker nodes | Application HTTP traffic |
+| HTTPS | `443` | Worker nodes | Application HTTPS traffic |
+
+### API Traffic
+
+```text
+Client
+  │
+  │ :6443
+  ▼
+OCI Load Balancer
+  │
+  ├── Master-1 :6443
+  ├── Master-2 :6443
+  └── Master-3 :6443
+```
+
+*Application Traffic*
+
+```text
+Client
+  │
+  ├── :80
+  │
+  └── :443
+       │
+       ▼
+OCI Load Balancer
+       │
+       ├── Worker-1
+       └── Worker-2
+              │
+              ▼
+       OKD Ingress Controller
+              │
+              ▼
+           Service
+              │
+              ▼
+        Application Pods
+```
+
+Load Balancer Health Checks
+
+The backend sets use health checks to determine whether the configured backend nodes are available to receive traffic.
+
+HTTP backend uses HTTP health checking on port 80
+HTTPS backend uses TCP health checking on port 443
+API backend uses TCP health checking on port 6443
+
+This allows the Load Balancer to remove unhealthy backends from traffic distribution.
+
+Traffic Flow
+
+```text
+External Client
+       │
+       ▼
+      DNS
+       │
+       ▼
+OCI Load Balancer
+       │
+       ├── :6443 ──→ Control Plane
+       │
+       ├── :80  ──→ Worker Nodes
+       │
+       └── :443 ──→ Worker Nodes
+```
