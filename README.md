@@ -81,7 +81,7 @@ Bastion                         +--------+--------+
 
 The following diagram shows the complete OKD UPI architecture deployed on Oracle Cloud Infrastructure (OCI).
 
-![Complete OKD UPI Architecture](diagrams/End-to-End-Flow.png)
+![Complete OKD UPI Architecture](diagrams/OKD-UPI-LAB-Architecture.png)
 
 ### Architecture Components
 
