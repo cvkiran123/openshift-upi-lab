@@ -122,3 +122,46 @@ Private Subnet
 ├── Worker-1
 └── Worker-2
 ```
+
+## Terraform Structure
+
+The OCI infrastructure is provisioned using Terraform modules to keep each infrastructure component separated and reusable.
+
+```text
+terraform/
+├── main.tf
+├── variables.tf
+├── outputs.tf
+├── versions.tf
+│
+└── modules/
+    ├── network/
+    │   └── OCI networking components
+    │
+    ├── compute/
+    │   └── Bastion, Master and Worker instances
+    │
+    ├── loadbalancer/
+    │   └── OCI Load Balancer, listeners and backend sets
+    │
+    ├── dns/
+    │   └── Private DNS zone and OKD DNS records
+    │
+    ├── bootstrap/
+    │   └── Temporary OKD Bootstrap instance
+    │
+    ├── custom-image/
+    │   └── OCI custom image creation
+    │
+    └── object-storage/
+        └── OCI Object Storage bucket and OS image
+```
+| Module           | Responsibility                                                                                       |
+| ---------------- | ---------------------------------------------------------------------------------------------------- |
+| `network`        | Creates the OCI VCN, subnets, route tables, Internet Gateway, NAT Gateway and security configuration |
+| `compute`        | Creates the Bastion, Control Plane and Worker instances                                              |
+| `loadbalancer`   | Creates the OCI Load Balancer, listeners, backend sets and backends                                  |
+| `dns`            | Creates the private DNS zone and OKD API/application DNS records                                     |
+| `bootstrap`      | Creates the temporary Bootstrap instance used during the UPI installation                            |
+| `custom-image`   | Creates the OCI custom image used for the OKD nodes                                                  |
+| `object-storage` | Stores the OKD OS image used by the custom image workflow                                            |
