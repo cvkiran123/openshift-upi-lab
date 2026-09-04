@@ -302,27 +302,71 @@ The OKD cluster is deployed inside an OCI Virtual Cloud Network (VCN) using sepa
                                  from Bastion
 ```
 
-Traffic and Routing
+*Traffic and Routing*
 
 Private OKD nodes do not require public IP addresses for normal cluster operation.
 
 Outbound internet connectivity from the private subnet is provided through the NAT Gateway, while external API and application traffic enters through the OCI Load Balancer.
 
-```text
-External Client
-      │
-      ▼
-OCI Load Balancer
-      │
-      ▼
-Private OKD Nodes
+### Application Traffic Flow
 
+```text
+User
+  │
+  ▼
+DNS
+  │
+  ▼
+OCI Load Balancer
+  │
+  ├── :80  ──→ Worker-1 / Worker-2
+  │
+  └── :443 ──→ Worker-1 / Worker-2
+                    │
+                    ▼
+             OKD Ingress Controller
+                    │
+                    ▼
+                 Service
+                    │
+                    ▼
+              Application Pod
+```
+
+### API Traffic Flow
+
+```text
+OKD Client
+  │
+  ▼
+api.okd.ocp.lab
+  │
+  ▼
+OCI Private DNS
+  │
+  ▼
+OCI Load Balancer :6443
+  │
+  ├── Master-1
+  ├── Master-2
+  └── Master-3
+```
+
+### Private Node Outbound Traffic
+
+```text
 Private OKD Node
-      │
-      ▼
+       │
+       ▼
+Private Route Table
+       │
+       ▼
 NAT Gateway
-      │
-      ▼
+       │
+       ▼
+Internet Gateway
+       │
+       ▼
 Internet
 ```
 
