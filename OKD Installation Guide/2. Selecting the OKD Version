@@ -1,0 +1,181 @@
+## 2. Select the OKD Version
+
+Before downloading the OKD installer, CLI, or operating system image, first decide which OKD release will be installed.
+
+For this lab, the selected release is:
+
+```text
+OKD 4.22
+Architecture: x86_64
+```
+
+The version should be selected first because the installation tools, release artifacts, and operating system image need to correspond to the cluster release.
+
+### 2.1 Check the Available OKD Releases
+
+OKD releases are published through the OKD project release repository.
+
+Open the official OKD releases page:
+
+https://github.com/okd-project/okd/releases
+
+Look for the required stable release.
+
+For this lab, OKD 4.22 was selected.
+
+### 2.2 Why OKD 4.22 Was Selected
+
+The version should not be chosen only because it is the newest release.
+
+Before selecting a release, consider:
+
+- Is it a stable release?
+- Is the required architecture available?
+- Are the required installation artifacts available?
+- Is the release supported by the installation documentation?
+- Are the required operating system images available?
+- Are the installer and `oc` client available for the selected release?
+
+For this lab:
+
+```text
+OKD Release : 4.22
+Architecture: x86_64
+Platform    : OCI
+Installation: UPI
+```
+
+The OKD 4.22 documentation provides installation procedures for user-provisioned infrastructure and platform-agnostic/bare-metal style installations. :contentReference[oaicite:1]{index=1}
+
+### 2.3 Check the Machine Architecture
+
+The OCI compute instances used in this lab are x86_64/AMD64 based.
+
+Verify the architecture of the installation host:
+
+```bash
+uname -m
+```
+
+Expected output:
+
+```text
+x86_64
+```
+
+You can also verify with:
+
+```bash
+arch
+```
+
+Expected output:
+
+```text
+x86_64
+```
+
+### 2.4 Verify the Selected Architecture
+
+The architecture used by the installation tools and operating system image must match the architecture of the machines.
+
+For this lab:
+
+```text
+Installation host → x86_64
+OCI Compute        → x86_64
+OKD artifacts      → x86_64
+OS image           → x86_64
+```
+
+Do not download an ARM64/aarch64 image for an x86_64 OCI instance.
+
+### 2.5 Record the Version
+
+Set the selected version as a shell variable.
+
+For this lab:
+
+```bash
+export OKD_VERSION=4.22
+```
+
+Verify:
+
+```bash
+echo "$OKD_VERSION"
+```
+
+Expected output:
+
+```text
+4.22
+```
+
+This variable will be used in the following sections when constructing download paths and identifying release artifacts.
+
+### 2.6 Record the Release Architecture
+
+Set the architecture:
+
+```bash
+export RELEASE_ARCH=x86_64
+```
+
+Verify:
+
+```bash
+echo "$RELEASE_ARCH"
+```
+
+Expected output:
+
+```text
+x86_64
+```
+
+### 2.7 Verify the Selected Release Information
+
+Display both variables together:
+
+```bash
+printf 'OKD Version : %s\nArchitecture: %s\n' "$OKD_VERSION" "$RELEASE_ARCH"
+```
+
+Expected output:
+
+```text
+OKD Version : 4.22
+Architecture: x86_64
+```
+
+At this point, the installation environment has a defined target:
+
+```text
+OKD 4.22
+    │
+    └── x86_64
+```
+
+### 2.8 Version Selection Checklist
+
+Before downloading the installation tools, verify:
+
+```text
+[ ] OKD release has been selected
+[ ] Selected release is stable
+[ ] Installation method is UPI
+[ ] Target platform is OCI
+[ ] Installation architecture is x86_64
+[ ] OCI compute architecture is x86_64
+[ ] OKD_VERSION variable is set
+[ ] RELEASE_ARCH variable is set
+```
+
+For this lab:
+
+```text
+OKD_VERSION=4.22
+RELEASE_ARCH=x86_64
+```
+

@@ -1,0 +1,68 @@
+### 4.3 Download the SCOS Image
+
+Create a directory for the OS image:
+
+```bash
+mkdir -p ~/okd-images
+cd ~/okd-images
+```
+
+Download the exact SCOS image selected in Section 4.2:
+
+```bash
+curl -LO <SCOS-IMAGE-URL>
+```
+
+For this lab, the selected image was:
+
+```text
+scos-10.0.20251103-0-openstack.x86_64
+```
+
+Verify that the image was downloaded:
+
+```bash
+ls -lh
+```
+
+Check the image format:
+
+```bash
+file scos-10.0.20251103-0-openstack.x86_64
+```
+
+For additional verification:
+
+```bash
+qemu-img info scos-10.0.20251103-0-openstack.x86_64
+```
+
+Confirm:
+
+```text
+file format: qcow2
+```
+
+### Checksum Verification
+
+Calculate the SHA-256 checksum:
+
+```bash
+sha256sum scos-10.0.20251103-0-openstack.x86_64
+```
+
+Compare the result with the checksum published for the **exact same image**.
+
+The checksum must match before proceeding.
+
+### Verification Checklist
+
+```text
+[ ] Image downloaded
+[ ] Correct image filename
+[ ] Architecture is x86_64
+[ ] Image format is QCOW2
+[ ] SHA-256 checksum matches
+```
+
+The verified image is now ready to be uploaded to OCI Object Storage.

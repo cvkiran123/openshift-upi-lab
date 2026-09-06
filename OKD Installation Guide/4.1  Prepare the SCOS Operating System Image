@@ -1,0 +1,172 @@
+### 4.1 Understanding SCOS Image Choices
+
+Before downloading the operating system image, it is important to understand the available image choices and why a particular image is selected.
+
+For this OCI UPI lab, the selection process is:
+
+```text
+Target Environment
+        │
+        ▼
+OCI Compute VM
+        │
+        ▼
+CPU Architecture
+        │
+        ▼
+x86_64
+        │
+        ▼
+Virtual Machine Disk Image
+        │
+        ▼
+QCOW2
+        │
+        ▼
+SCOS OpenStack Image
+        │
+        ▼
+OCI Custom Image
+```
+
+The important terms are:
+
+| Term | Meaning |
+|---|---|
+| `x86_64` | CPU architecture used by the OCI Compute instances in this lab |
+| QEMU | Virtualization/emulation technology commonly associated with QCOW2 images |
+| QCOW2 | Virtual machine disk image format |
+| OpenStack image | SCOS image artifact intended for an OpenStack-style VM environment |
+| OCI Custom Image | OCI image created by importing the selected OS image for use by OCI Compute instances |
+
+For this lab, the selected SCOS image was:
+
+```text
+scos-10.0.20251103-0-openstack.x86_64
+```
+
+This gives us:
+
+```text
+Architecture : x86_64
+Image type   : OpenStack
+Disk format  : QCOW2
+Target       : OCI Compute
+```
+
+### Why OpenStack?
+
+The important point is that we should not simply memorize:
+
+```text
+"OCI → choose OpenStack"
+```
+
+Instead, the selection should be based on the image and import requirements.
+
+The reasoning for this lab was:
+
+```text
+OCI Compute
+    │
+    ▼
+Virtual Machine
+    │
+    ▼
+x86_64 architecture
+    │
+    ▼
+Need a compatible VM disk image
+    │
+    ▼
+QCOW2-based SCOS image
+    │
+    ▼
+OpenStack SCOS artifact
+    │
+    ▼
+Import into OCI
+    │
+    ▼
+OCI Custom Image
+```
+
+The OpenStack artifact was selected because it provided the SCOS VM disk image in a QCOW2-based format suitable for the OCI image import workflow used in this project.
+
+> **Important:** QEMU, QCOW2, and OpenStack are related but are not the same thing. QEMU is virtualization software, QCOW2 is a disk-image format, and OpenStack is a cloud/virtualization platform. Do not treat them as interchangeable terms.
+
+### 4.1.1 Verify the OCI Compute Architecture
+
+Before selecting the image, verify the architecture of the target Compute instances.
+
+From the OCI Console, check the Compute instance shape and operating-system/image details.
+
+For this lab, the selected shape was:
+
+```text
+VM.Standard.E4.Flex
+```
+
+The target architecture is:
+
+```text
+x86_64
+```
+
+You can also verify the architecture from a running Linux instance:
+
+```bash
+uname -m
+```
+
+Expected output:
+
+```text
+x86_64
+```
+
+### 4.1.2 Verify the Image Format
+
+After downloading the SCOS image, verify its format:
+
+```bash
+file <image-file>
+```
+
+For a QCOW2 image, the output should identify the file as a QEMU QCOW2 disk image.
+
+If `qemu-img` is available, obtain more detailed information:
+
+```bash
+qemu-img info <image-file>
+```
+
+Verify that the output contains:
+
+```text
+file format: qcow2
+```
+
+### 4.1.3 Selection Checklist
+
+Before downloading the image, verify:
+
+```text
+[ ] Target environment is OCI Compute
+[ ] Target instances use x86_64 architecture
+[ ] A VM-compatible SCOS image is required
+[ ] The selected image is x86_64
+[ ] The selected artifact provides a compatible disk image
+[ ] The selected SCOS artifact is suitable for the OCI import workflow
+```
+
+For this lab:
+
+```text
+Target       : OCI Compute
+Architecture : x86_64
+SCOS Artifact: OpenStack
+Image Format : QCOW2
+```
+
+The next step is to identify the **exact SCOS release and download the matching image**.

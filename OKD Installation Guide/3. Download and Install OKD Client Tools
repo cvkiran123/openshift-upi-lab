@@ -1,0 +1,427 @@
+## 3. Download and Install OKD Client Tools
+
+After selecting the OKD release, download the installation tools that correspond to the selected OKD release.
+
+For this lab:
+
+```text
+OKD Release : 4.22.0-okd-scos.7
+Architecture: x86_64
+Host OS     : Linux
+```
+
+The two primary tools required are:
+
+| Tool | Purpose |
+|---|---|
+| `openshift-install` | Creates the OKD installation configuration and Ignition files and manages the installation |
+| `oc` | Command-line client used to interact with and administer the OKD cluster |
+
+OKD documentation recommends using the appropriate `oc` version for the OKD release rather than an older client version. :contentReference[oaicite:1]{index=1}
+
+### 3.1 Create a Tools Directory
+
+Create a dedicated directory for the OKD installation tools:
+
+```bash
+mkdir -p ~/okd-tools
+cd ~/okd-tools
+```
+
+Verify:
+
+```bash
+pwd
+```
+
+Expected:
+
+```text
+/home/<user>/okd-tools
+```
+
+---
+
+### 3.2 Set the OKD Release Version
+
+Set the exact release selected in Section 2:
+
+```bash
+export OKD_RELEASE=4.22.0-okd-scos.7
+```
+
+Verify:
+
+```bash
+echo "$OKD_RELEASE"
+```
+
+Expected:
+
+```text
+4.22.0-okd-scos.7
+```
+
+Also verify the host architecture:
+
+```bash
+uname -m
+```
+
+Expected:
+
+```text
+x86_64
+```
+
+---
+
+### 3.3 Download the OKD Client (`oc`)
+
+The OKD release provides a Linux x86_64 client archive.
+
+Download the client archive for the selected release:
+
+```bash
+curl -LO https://github.com/okd-project/okd/releases/download/${OKD_RELEASE}/openshift-client-linux-${OKD_RELEASE}.tar.gz
+```
+
+Verify that the archive was downloaded:
+
+```bash
+ls -lh openshift-client-linux-${OKD_RELEASE}.tar.gz
+```
+
+You should see the downloaded archive.
+
+---
+
+### 3.4 Extract the `oc` Client
+
+Extract the archive:
+
+```bash
+tar -xzf openshift-client-linux-${OKD_RELEASE}.tar.gz
+```
+
+Verify the extracted files:
+
+```bash
+ls -lh
+```
+
+You should see:
+
+```text
+oc
+kubectl
+```
+
+Make the binaries executable:
+
+```bash
+chmod +x oc kubectl
+```
+
+Verify:
+
+```bash
+ls -l oc kubectl
+```
+
+The permissions should include the executable bit, for example:
+
+```text
+-rwxr-xr-x
+```
+
+---
+
+### 3.5 Install `oc` into the PATH
+
+Check the current PATH:
+
+```bash
+echo "$PATH"
+```
+
+A common location for manually installed user binaries is:
+
+```text
+/usr/local/bin
+```
+
+If you have administrative privileges, copy the binaries:
+
+```bash
+sudo cp oc kubectl /usr/local/bin/
+```
+
+Verify:
+
+```bash
+which oc
+which kubectl
+```
+
+Expected:
+
+```text
+/usr/local/bin/oc
+/usr/local/bin/kubectl
+```
+
+---
+
+### 3.6 Verify the `oc` Version
+
+Run:
+
+```bash
+oc version --client
+```
+
+Also run:
+
+```bash
+oc version --client=true
+```
+
+The output should show the client version corresponding to the selected OKD release.
+
+You can also verify:
+
+```bash
+oc version --client -o yaml
+```
+
+This provides more detailed version information.
+
+> Do not use an old `oc` binary left on the system if it does not correspond to the OKD release being installed.
+
+---
+
+### 3.7 Download the OKD Installation Program
+
+Download the matching OKD installation program:
+
+```bash
+curl -LO https://github.com/okd-project/okd/releases/download/${OKD_RELEASE}/openshift-install-linux-${OKD_RELEASE}.tar.gz
+```
+
+Verify the archive:
+
+```bash
+ls -lh openshift-install-linux-${OKD_RELEASE}.tar.gz
+```
+
+---
+
+### 3.8 Extract `openshift-install`
+
+Extract the installer:
+
+```bash
+tar -xzf openshift-install-linux-${OKD_RELEASE}.tar.gz
+```
+
+Verify:
+
+```bash
+ls -lh openshift-install
+```
+
+Make it executable:
+
+```bash
+chmod +x openshift-install
+```
+
+Verify the permission:
+
+```bash
+ls -l openshift-install
+```
+
+Expected permissions should include:
+
+```text
+-rwxr-xr-x
+```
+
+---
+
+### 3.9 Install `openshift-install` into the PATH
+
+Copy the installer to `/usr/local/bin`:
+
+```bash
+sudo cp openshift-install /usr/local/bin/
+```
+
+Verify its location:
+
+```bash
+which openshift-install
+```
+
+Expected:
+
+```text
+/usr/local/bin/openshift-install
+```
+
+---
+
+### 3.10 Verify the Installer Version
+
+Run:
+
+```bash
+openshift-install version
+```
+
+The output should identify the OKD release for which the installer is configured.
+
+For example, it should contain information corresponding to:
+
+```text
+4.22.0-okd-scos.7
+```
+
+The installer is release-specific: the installer binary is preconfigured for a particular OKD release. The OKD release page exposes this information along with the release digest. :contentReference[oaicite:2]{index=2}
+
+---
+
+### 3.11 Verify Both Tools
+
+Run:
+
+```bash
+which oc
+which kubectl
+which openshift-install
+```
+
+Expected:
+
+```text
+/usr/local/bin/oc
+/usr/local/bin/kubectl
+/usr/local/bin/openshift-install
+```
+
+Then:
+
+```bash
+oc version --client
+openshift-install version
+```
+
+At this point, both primary OKD installation tools should be available from any directory.
+
+---
+
+### 3.12 Verify the Downloaded Archives
+
+List the downloaded archives:
+
+```bash
+ls -lh *.tar.gz
+```
+
+You should have:
+
+```text
+openshift-client-linux-4.22.0-okd-scos.7.tar.gz
+openshift-install-linux-4.22.0-okd-scos.7.tar.gz
+```
+
+The archives can now be retained for reference or removed after successful installation.
+
+---
+
+### 3.13 Checksum Verification
+
+The OKD release publishes SHA-256 checksums for its release assets. The release page specifically recommends verifying downloaded archives using checksum/signature information. :contentReference[oaicite:3]{index=3}
+
+Calculate the checksum of the downloaded client archive:
+
+```bash
+sha256sum openshift-client-linux-${OKD_RELEASE}.tar.gz
+```
+
+Calculate the checksum of the installer archive:
+
+```bash
+sha256sum openshift-install-linux-${OKD_RELEASE}.tar.gz
+```
+
+Compare the resulting SHA-256 values with the values published for the exact release asset.
+
+> The checksum must match the checksum published for the same release and exact filename. Do not compare against a checksum from a different OKD release.
+
+---
+
+### 3.14 Final Tool Verification
+
+Run the complete verification:
+
+```bash
+echo "Architecture:"
+uname -m
+
+echo
+echo "OKD Release:"
+echo "$OKD_RELEASE"
+
+echo
+echo "oc:"
+which oc
+oc version --client
+
+echo
+echo "openshift-install:"
+which openshift-install
+openshift-install version
+```
+
+The expected state is:
+
+```text
+Architecture:
+x86_64
+
+OKD Release:
+4.22.0-okd-scos.7
+
+oc:
+/usr/local/bin/oc
+<matching client version>
+
+openshift-install:
+/usr/local/bin/openshift-install
+<matching installer version>
+```
+
+### 3.15 Installation Tool Checklist
+
+Before continuing:
+
+```text
+[ ] Exact OKD release selected
+[ ] Installation host architecture verified
+[ ] OKD client downloaded
+[ ] OKD client extracted
+[ ] oc installed
+[ ] oc version verified
+[ ] OKD installer downloaded
+[ ] OKD installer extracted
+[ ] openshift-install installed
+[ ] openshift-install version verified
+[ ] SHA-256 checksums verified
+[ ] Both commands are available through PATH
+```
+
+The installation environment is now ready for the next stage.
+

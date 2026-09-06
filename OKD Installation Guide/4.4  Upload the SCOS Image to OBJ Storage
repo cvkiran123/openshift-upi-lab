@@ -1,0 +1,70 @@
+### 4.4 Upload the SCOS Image to OCI Object Storage
+
+The SCOS image was uploaded to OCI Object Storage using Terraform.
+
+The Terraform configuration contains separate modules for:
+
+```text
+terraform/modules/
+├── object-storage/
+└── custom-image/
+```
+
+The workflow is:
+
+```text
+SCOS QCOW2 Image
+       │
+       ▼
+Terraform
+       │
+       ▼
+OCI Object Storage
+       │
+       ▼
+OCI Custom Image
+```
+
+The Object Storage module creates the bucket and uploads the SCOS image.
+
+The Custom Image module imports the uploaded image into OCI as a reusable Compute image.
+
+### Verify Object Storage
+
+After Terraform completes:
+
+```bash
+oci os object list \
+  --namespace-name "$NAMESPACE" \
+  --bucket-name okd-images
+```
+
+Verify that the SCOS image is present:
+
+```text
+scos-10.0.20251103-0-openstack.x86_64
+```
+
+### Verify the Custom Image
+
+```bash
+oci compute image list \
+  --compartment-id <COMPARTMENT_OCID>
+```
+
+Verify that the imported SCOS image is present and its lifecycle state is:
+
+```text
+AVAILABLE
+```
+
+### Verification Checklist
+
+```text
+[ ] Terraform created/managed the Object Storage resources
+[ ] SCOS image exists in the okd-images bucket
+[ ] Custom Image was created
+[ ] Custom Image state is AVAILABLE
+```
+
+The SCOS image is now ready to be used as the boot image for the OKD nodes.

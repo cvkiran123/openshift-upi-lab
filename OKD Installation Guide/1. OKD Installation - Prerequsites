@@ -1,0 +1,572 @@
+# OKD UPI Installation Guide
+
+This guide documents the installation of an OKD cluster using the **User-Provisioned Infrastructure (UPI)** approach on **Oracle Cloud Infrastructure (OCI)**.
+
+The guide starts after the OCI infrastructure has been provisioned and covers the complete OKD installation process, including version selection, installation tools, operating system image preparation, ignition configuration, Bootstrap, Control Plane, Worker nodes, Load Balancer, DNS, validation, and cleanup.
+
+---
+
+## 1. Prerequisites
+
+Before starting the OKD installation, verify that the required infrastructure, networking, DNS, access, software, credentials, and installation directories are available.
+
+Each prerequisite below includes a verification procedure.
+
+---
+
+### 1.1 OCI Infrastructure
+
+The OCI infrastructure must already be provisioned and running.
+
+The lab contains:
+
+- OCI VCN
+- Public subnet
+- Private subnet
+- Bastion host
+- Bootstrap node
+- Three Master nodes
+- Two Worker nodes
+- OCI Load Balancer
+- OCI Private DNS
+- NAT Gateway
+- Security Lists / Network Security Groups
+
+#### Verify
+
+From the OCI Console, verify that the required Compute instances are in the **Running** state.
+
+You can also verify the instances using the OCI CLI:
+
+```bash
+oci compute instance list \
+  --compartment-id <COMPARTMENT_OCID> \
+  --query 'data[].{Name:"display-name",State:"lifecycle-state",PrivateIP:"private-ip"}'
+```
+
+Verify the expected nodes:
+
+```text
+Bastion
+Bootstrap
+Master-1
+Master-2
+Master-3
+Worker-1
+Worker-2
+```
+
+Also verify that the Load Balancer is available:
+
+```bash
+oci lb load-balancer list \
+  --compartment-id <COMPARTMENT_OCID> \
+  --query 'data[].{Name:"display-name",State:"lifecycle-state",IP:"ip-addresses[0].ip-address"}'
+```
+
+#### Expected result
+
+The Compute instances should be in:
+
+```text
+RUNNING
+```
+
+and the Load Balancer should be in:
+
+```text
+ACTIVE
+```
+
+---
+
+### 1.2 Network Connectivity
+
+The required network paths must be available before starting the OKD installation.
+
+Required connectivity includes:
+
+```text
+Bastion
+   │
+   ├──→ Bootstrap
+   ├──→ Masters
+   └──→ Workers
+
+OCI Load Balancer
+   │
+   ├──→ Bootstrap / Masters
+   └──→ Workers
+
+Private Nodes
+   │
+   └──→ Internet through NAT Gateway
+```
+
+#### Verify Bastion → Private Nodes
+
+From the Bastion:
+
+```bash
+ping -c 3 <bootstrap-ip>
+ping -c 3 <master-ip>
+ping -c 3 <worker-ip>
+```
+
+Then verify SSH:
+
+```bash
+ssh <user>@<bootstrap-ip>
+ssh <user>@<master-ip>
+ssh <user>@<worker-ip>
+```
+
+> ICMP/ping may be blocked by security rules. A failed ping does not automatically mean TCP connectivity is unavailable. SSH or `nc` provides a more useful test for the required ports.
+
+#### Verify required ports
+
+From the Bastion:
+
+```bash
+nc -vz <master-ip> 6443
+nc -vz <master-ip> 22623
+nc -vz <worker-ip> 80
+nc -vz <worker-ip> 443
+```
+
+#### Verify private-node outbound connectivity
+
+From a private node:
+
+```bash
+curl -I https://www.google.com
+```
+
+If DNS is also being tested:
+
+```bash
+curl -I https://quay.io
+```
+
+#### Expected result
+
+For reachable TCP ports:
+
+```text
+Connection to <IP> <port> port [tcp/*] succeeded!
+```
+
+For outbound HTTPS:
+
+```text
+HTTP/...
+```
+
+or another valid HTTP response.
+
+---
+
+### 1.3 DNS
+
+OKD requires working DNS for API, internal API, and application routes.
+
+The lab uses:
+
+```text
+ocp.lab
+```
+
+Important names include:
+
+```text
+api.okd.ocp.lab
+api-int.okd.ocp.lab
+*.apps.okd.ocp.lab
+```
+
+#### Verify DNS resolution
+
+From the Bastion:
+
+```bash
+dig api.okd.ocp.lab
+dig api-int.okd.ocp.lab
+dig console-openshift-console.apps.okd.ocp.lab
+dig oauth-openshift.apps.okd.ocp.lab
+```
+
+For the wildcard application domain:
+
+```bash
+dig console-openshift-console.apps.okd.ocp.lab
+dig oauth-openshift.apps.okd.ocp.lab
+```
+
+Both should resolve to the OCI Load Balancer IP.
+
+For example:
+
+```text
+console-openshift-console.apps.okd.ocp.lab
+        │
+        ▼
+OCI Private DNS
+        │
+        ▼
+130.210.21.43
+```
+
+You can also query a specific DNS server:
+
+```bash
+dig @<DNS-SERVER-IP> api.okd.ocp.lab
+```
+
+#### Verify reverse DNS if configured
+
+```bash
+dig -x <load-balancer-ip>
+```
+
+Reverse DNS is not required for the basic OKD installation unless you have specifically configured it.
+
+---
+
+### 1.4 Bastion / Installation Host
+
+The Bastion acts as the administration and installation host.
+
+#### Verify SSH access to Bastion
+
+From your workstation:
+
+```bash
+ssh <user>@<bastion-public-ip>
+```
+
+#### Verify Bastion network interfaces
+
+On the Bastion:
+
+```bash
+ip addr
+```
+
+Verify that the Bastion has the expected private IP.
+
+For this lab:
+
+```text
+10.0.1.173
+```
+
+#### Verify connectivity to the private subnet
+
+```bash
+ip route
+```
+
+You should see a route allowing access to:
+
+```text
+10.0.2.0/24
+```
+
+Then test a private node:
+
+```bash
+nc -vz <private-node-ip> 22
+```
+
+---
+
+### 1.5 SSH Key Pair
+
+An SSH key pair is required for administrative access to the cluster nodes.
+
+#### Verify the key exists
+
+```bash
+ls -l ~/.ssh/
+```
+
+For example:
+
+```text
+id_rsa
+id_rsa.pub
+```
+
+#### Verify the public key
+
+```bash
+cat ~/.ssh/id_rsa.pub
+```
+
+The output should begin with something similar to:
+
+```text
+ssh-rsa
+```
+
+or:
+
+```text
+ssh-ed25519
+```
+
+#### Test the key
+
+```bash
+ssh -i ~/.ssh/id_rsa <user>@<node-ip>
+```
+
+#### Important
+
+Never commit the private key:
+
+```text
+~/.ssh/id_rsa
+```
+
+to Git.
+
+---
+
+### 1.6 OKD Pull Secret
+
+OKD installation requires a pull secret to be provided in `install-config.yaml`.
+
+For this lab installation, a **fake/dummy pull secret** was used because the objective was to build and validate the OKD UPI installation in a lab environment rather than access authenticated Red Hat registries.
+
+#### Create a dummy pull secret
+
+Create a file:
+
+```bash
+vi ~/pull-secret.json
+```
+
+Example:
+
+```json
+{
+  "auths": {}
+}
+```
+
+Save the file and verify that it contains valid JSON:
+
+```bash
+python3 -m json.tool ~/pull-secret.json
+```
+
+Expected result:
+
+```text
+{
+    "auths": {}
+}
+```
+
+You can also verify the file exists:
+
+```bash
+ls -lh ~/pull-secret.json
+```
+
+#### Important
+
+This dummy pull secret is suitable for this **lab/testing scenario only**.
+
+For a production or registry-authenticated installation, use the appropriate pull secret provided for the required registries.
+
+Do not commit the pull secret to Git, even if it is a dummy credential.
+
+Add it to `.gitignore`:
+
+```text
+pull-secret.json
+pull-secret.txt
+```
+
+The pull secret will later be referenced while creating `install-config.yaml`.
+
+The OKD pull secret is required during installation.
+
+#### Verify that the file exists
+
+For example:
+
+```bash
+ls -l ~/pull-secret.json
+```
+
+#### Verify that it contains JSON
+
+```bash
+python3 -m json.tool ~/pull-secret.json
+```
+
+A successfully formatted JSON document should be displayed without a parsing error.
+
+You can also check the file type:
+
+```bash
+file ~/pull-secret.json
+```
+
+#### Important
+
+Do **not** display the pull secret contents in the terminal or commit it to Git.
+
+Add it to `.gitignore` if necessary.
+
+---
+
+### 1.7 OKD Installation Tools
+
+The installation environment requires:
+
+- `openshift-install`
+- `oc`
+
+Additional utilities used during the installation include:
+
+- `curl`
+- `wget`
+- `sha256sum`
+- `ssh`
+- `scp`
+
+#### Verify `openshift-install`
+
+```bash
+openshift-install version
+```
+
+Expected output should show the installer version.
+
+Record the version because the installer must correspond to the OKD release being installed.
+
+#### Verify `oc`
+
+```bash
+oc version --client
+```
+
+Expected output should show the client version.
+
+#### Verify supporting utilities
+
+```bash
+curl --version
+wget --version
+sha256sum --version
+ssh -V
+scp -V
+```
+
+#### Important
+
+Do not choose the installer version randomly.
+
+The OKD release will be selected and documented in **Section 2**, followed by downloading the matching installation tools.
+
+---
+
+### 1.8 Installation Directory
+
+Create a dedicated directory for the installation:
+
+```bash
+mkdir -p ~/okd-install
+cd ~/okd-install
+```
+
+Verify:
+
+```bash
+pwd
+ls -la
+```
+
+Expected location:
+
+```text
+/home/<user>/okd-install
+```
+
+This directory will later contain files such as:
+
+```text
+install-config.yaml
+bootstrap.ign
+master.ign
+worker.ign
+```
+
+Some of these files can contain sensitive information.
+
+They must not be committed to Git.
+
+---
+
+### 1.9 Required Hostname Resolution
+
+Before generating ignition files, verify that the installation host can resolve the important OKD names.
+
+Run:
+
+```bash
+getent hosts api.okd.ocp.lab
+getent hosts api-int.okd.ocp.lab
+getent hosts console-openshift-console.apps.okd.ocp.lab
+```
+
+You can also use:
+
+```bash
+nslookup api.okd.ocp.lab
+nslookup console-openshift-console.apps.okd.ocp.lab
+```
+
+#### Expected result
+
+The names should resolve to the expected OCI Load Balancer address where applicable.
+
+Do not proceed if required DNS records return:
+
+```text
+NXDOMAIN
+```
+
+or resolve to an unexpected address.
+
+---
+
+### 1.10 Prerequisite Verification Summary
+
+Before proceeding to the OKD version selection, verify the following:
+
+```text
+[ ] OCI Compute instances are RUNNING
+[ ] OCI Load Balancer is ACTIVE
+[ ] Bastion SSH access works
+[ ] Bastion can reach private nodes
+[ ] Required node ports are reachable
+[ ] Private nodes have outbound connectivity
+[ ] API DNS resolves correctly
+[ ] Internal API DNS resolves correctly
+[ ] Application DNS resolves correctly
+[ ] SSH key pair is available
+[ ] OKD pull secret is available
+[ ] openshift-install is available
+[ ] oc CLI is available
+[ ] Installation directory is ready
+[ ] Hostname resolution works
+```
+
+Only after these prerequisites have been successfully verified should the installation proceed.
+
+---

@@ -1,0 +1,213 @@
+## 5. Verify OCI Infrastructure
+
+Before starting the OKD installation, verify that all OCI resources required by the UPI deployment are available and correctly configured.
+
+### 5.1 Verify Compute Instances
+
+List the Compute instances:
+
+```bash
+oci compute instance list \
+  --compartment-id <COMPARTMENT_OCID> \
+  --query 'data[].{Name:"display-name",State:"lifecycle-state"}'
+```
+
+Verify that the required nodes are present:
+
+```text
+Bastion
+Bootstrap
+Master-1
+Master-2
+Master-3
+Worker-1
+Worker-2
+```
+
+Expected state:
+
+```text
+RUNNING
+```
+
+---
+
+### 5.2 Verify Private IP Addresses
+
+From the OCI Console, verify that the nodes have the expected private IP addresses.
+
+For this lab:
+
+```text
+Bootstrap   → 10.0.2.132
+Master-1    → 10.0.2.178
+Master-2    → 10.0.2.143
+Master-3    → 10.0.2.21
+Worker-1    → 10.0.2.81
+Worker-2    → 10.0.2.24
+```
+
+These addresses should belong to the private subnet:
+
+```text
+10.0.2.0/24
+```
+
+---
+
+### 5.3 Verify Bastion
+
+Verify that the Bastion is running and has network access to the private subnet.
+
+From your workstation:
+
+```bash
+ssh <user>@<bastion-public-ip>
+```
+
+On the Bastion:
+
+```bash
+ip addr
+```
+
+Verify its private address:
+
+```text
+10.0.1.173
+```
+
+Verify the route to the private subnet:
+
+```bash
+ip route
+```
+
+---
+
+### 5.4 Verify Private Node Connectivity
+
+From the Bastion, test SSH connectivity to the private nodes:
+
+```bash
+ssh <user>@10.0.2.132
+ssh <user>@10.0.2.178
+ssh <user>@10.0.2.143
+ssh <user>@10.0.2.21
+ssh <user>@10.0.2.81
+ssh <user>@10.0.2.24
+```
+
+If the SSH key is available only on your workstation, SSH agent forwarding can be used:
+
+```bash
+ssh -A <user>@<bastion-public-ip>
+```
+
+Then connect from the Bastion to the private nodes.
+
+---
+
+### 5.5 Verify Load Balancer
+
+Verify that the OCI Load Balancer exists and is active:
+
+```bash
+oci lb load-balancer list \
+  --compartment-id <COMPARTMENT_OCID> \
+  --query 'data[].{Name:"display-name",State:"lifecycle-state",IP:"ip-addresses[0].ip-address"}'
+```
+
+For this lab, the Load Balancer public IP was:
+
+```text
+130.210.21.43
+```
+
+Expected state:
+
+```text
+ACTIVE
+```
+
+---
+
+### 5.6 Verify Load Balancer Listeners
+
+Verify that the required listeners exist:
+
+```text
+6443  → Kubernetes API
+22623 → Machine Config Server
+80    → HTTP application traffic
+443   → HTTPS application traffic
+```
+
+These listeners should forward traffic to the appropriate backend nodes.
+
+---
+
+### 5.7 Verify Private DNS
+
+Verify that the OKD DNS records are present and resolve correctly.
+
+From the Bastion:
+
+```bash
+dig api.okd.ocp.lab
+dig api-int.okd.ocp.lab
+dig console-openshift-console.apps.okd.ocp.lab
+dig oauth-openshift.apps.okd.ocp.lab
+```
+
+The application hostnames should resolve to the OCI Load Balancer IP.
+
+For example:
+
+```text
+console-openshift-console.apps.okd.ocp.lab
+        │
+        ▼
+130.210.21.43
+```
+
+---
+
+### 5.8 Verify NAT / Outbound Connectivity
+
+Private nodes require outbound connectivity for required installation and cluster operations.
+
+From a private node:
+
+```bash
+curl -I https://www.google.com
+```
+
+Also verify DNS:
+
+```bash
+getent hosts quay.io
+```
+
+A successful response confirms that the private node can resolve external names and reach the Internet through the configured OCI network path.
+
+---
+
+### 5.9 Infrastructure Verification Checklist
+
+Before proceeding to the OKD installation:
+
+```text
+[ ] All Compute instances are RUNNING
+[ ] Bastion is accessible
+[ ] Private node IPs are correct
+[ ] Bastion can SSH to private nodes
+[ ] Load Balancer is ACTIVE
+[ ] Required listeners are configured
+[ ] DNS records resolve correctly
+[ ] Private nodes have outbound connectivity
+[ ] Object Storage image is available
+[ ] OCI Custom Image is AVAILABLE
+```
+
+Once all checks pass, the OCI infrastructure is ready for the **OKD installation configuration and Ignition generation**.

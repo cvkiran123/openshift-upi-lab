@@ -1,0 +1,219 @@
+### 4.2 Identify the Exact SCOS Release and Image
+
+After selecting the target architecture and image type, identify the exact SCOS release that will be used for the OKD installation.
+
+The operating system image should be selected based on the **OKD release being installed**, architecture, and the image format required by the target infrastructure.
+
+For this lab:
+
+```text
+OKD Release  : 4.22
+Architecture : x86_64
+OS           : SCOS
+Image        : OpenStack
+Format       : QCOW2
+```
+
+The exact image used in this project was:
+
+```text
+scos-10.0.20251103-0-openstack.x86_64
+```
+
+### 4.2.1 Find the SCOS Release
+
+Start from the SCOS/OKD release information and identify the operating system build associated with the selected OKD release.
+
+When evaluating an image, check:
+
+```text
+1. SCOS release/build
+2. CPU architecture
+3. Image platform
+4. Image format
+5. Availability of checksum information
+```
+
+Do not select an image only by looking at the filename.
+
+---
+
+### 4.2.2 Check the Architecture
+
+The image must match the architecture of the OCI Compute instances.
+
+Verify the installation host:
+
+```bash
+uname -m
+```
+
+Expected:
+
+```text
+x86_64
+```
+
+The selected image should also indicate:
+
+```text
+x86_64
+```
+
+For example:
+
+```text
+scos-10.0.20251103-0-openstack.x86_64
+                                      │
+                                      └── x86_64
+```
+
+---
+
+### 4.2.3 Check the Image Type
+
+The selected artifact contains:
+
+```text
+openstack
+```
+
+This identifies the image artifact selected for the VM environment.
+
+For this lab:
+
+```text
+scos-10.0.20251103-0-openstack.x86_64
+                     └─────────┘
+                     OpenStack
+```
+
+The image was then imported into OCI rather than being used directly as an OpenStack VM image.
+
+The resulting workflow is:
+
+```text
+SCOS OpenStack Artifact
+          │
+          ▼
+       QCOW2
+          │
+          ▼
+OCI Object Storage
+          │
+          ▼
+OCI Custom Image
+          │
+          ▼
+OCI Compute Instance
+```
+
+---
+
+### 4.2.4 Check the Image Format
+
+After downloading the image, verify the actual file format rather than relying only on the filename.
+
+Run:
+
+```bash
+file <image-file>
+```
+
+For example:
+
+```bash
+file scos-10.0.20251103-0-openstack.x86_64
+```
+
+If the image is a QCOW2 disk image, the output should identify it as a QEMU QCOW2 image.
+
+For additional information:
+
+```bash
+qemu-img info scos-10.0.20251103-0-openstack.x86_64
+```
+
+Verify:
+
+```text
+file format: qcow2
+```
+
+If `qemu-img` is not installed, install the package appropriate for your Linux distribution before performing this verification.
+
+---
+
+### 4.2.5 Checksum Information
+
+Before downloading the image, locate the checksum published for the exact image artifact.
+
+The checksum must correspond to:
+
+```text
+Same SCOS release
+        +
+Same architecture
+        +
+Same image type
+        +
+Same filename
+```
+
+For example, do not compare the checksum of:
+
+```text
+scos-10.0.20251103-0-openstack.x86_64
+```
+
+with a checksum belonging to a different:
+
+```text
+SCOS release
+architecture
+image type
+```
+
+Record the checksum information before proceeding with the download.
+
+---
+
+### 4.2.6 Final Image Selection
+
+For this lab, the selection was:
+
+```text
+OKD
+ │
+ └── 4.22
+      │
+      ▼
+   SCOS
+      │
+      ├── Architecture → x86_64
+      │
+      ├── Image type   → OpenStack
+      │
+      └── Disk format  → QCOW2
+```
+
+Selected image:
+
+```text
+scos-10.0.20251103-0-openstack.x86_64
+```
+
+### 4.2.7 Verification Checklist
+
+Before downloading:
+
+```text
+[ ] OKD release identified
+[ ] Corresponding SCOS release identified
+[ ] Architecture verified as x86_64
+[ ] OpenStack image artifact selected
+[ ] QCOW2 image format confirmed
+[ ] Exact image filename recorded
+[ ] Checksum for the exact image located
+```
+
