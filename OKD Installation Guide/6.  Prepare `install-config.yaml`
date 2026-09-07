@@ -1,0 +1,378 @@
+## 6. Prepare `install-config.yaml`
+
+The `install-config.yaml` file defines the configuration of the OKD cluster before the Ignition files are generated.
+
+It contains information such as:
+
+- Cluster name
+- Base domain
+- Installation platform
+- Control plane configuration
+- Compute configuration
+- Pull secret
+- SSH public key
+
+For this UPI deployment, the infrastructure was already provisioned separately using Terraform.
+
+### 6.1 Create the Installation Directory
+
+Move to the installation directory:
+
+```bash
+cd ~/okd-install
+```
+
+Verify:
+
+```bash
+pwd
+```
+
+Expected:
+
+```text
+/home/<user>/okd-install
+```
+
+---
+
+### 6.2 Create `install-config.yaml`
+
+Create the configuration file:
+
+```bash
+vi install-config.yaml
+```
+
+The configuration for this lab follows the UPI/platform-independent approach.
+
+Example structure:
+
+```yaml
+apiVersion: v1
+baseDomain: ocp.lab
+metadata:
+  name: okd
+
+compute:
+- architecture: amd64
+  hyperthreading: Enabled
+  name: worker
+  replicas: 0
+
+controlPlane:
+  architecture: amd64
+  hyperthreading: Enabled
+  name: master
+  replicas: 3
+
+networking:
+  networkType: OVNKubernetes
+  clusterNetwork:
+  - cidr: 10.128.0.0/14
+    hostPrefix: 23
+  machineNetwork:
+  - cidr: 10.0.2.0/24
+  serviceNetwork:
+  - 172.30.0.0/16
+
+platform:
+  none: {}
+
+pullSecret: '<PULL-SECRET>'
+sshKey: '<SSH-PUBLIC-KEY>'
+```
+
+> The exact values must match the configuration used by the Terraform infrastructure and the selected OKD release. Do not blindly copy this example into a production cluster.
+
+---
+
+### 6.3 Why `platform: none`?
+
+UPI means that the infrastructure is provisioned independently of the OKD installer.
+
+In this lab:
+
+```text
+Terraform
+   │
+   ▼
+OCI Infrastructure
+   │
+   ├── Network
+   ├── Load Balancer
+   ├── Bootstrap
+   ├── Masters
+   └── Workers
+```
+
+The OKD installer then installs OKD onto that existing infrastructure.
+
+Therefore:
+
+```yaml
+platform:
+  none: {}
+```
+
+indicates that the OKD installer should not provision the underlying cloud infrastructure.
+
+---
+
+### 6.4 Verify the Cluster Name and Base Domain
+
+The cluster name is:
+
+```text
+okd
+```
+
+The base domain is:
+
+```text
+ocp.lab
+```
+
+Together they produce the API hostname:
+
+```text
+api.okd.ocp.lab
+```
+
+and application domain:
+
+```text
+*.apps.okd.ocp.lab
+```
+
+Verify the configuration:
+
+```bash
+grep -E 'baseDomain|name:' install-config.yaml
+```
+
+---
+
+### 6.5 Verify Control Plane Configuration
+
+This lab uses three Master nodes:
+
+```yaml
+controlPlane:
+  replicas: 3
+```
+
+Verify:
+
+```bash
+grep -A5 '^controlPlane:' install-config.yaml
+```
+
+Expected:
+
+```text
+controlPlane:
+  ...
+  replicas: 3
+```
+
+The three Masters provide the highly available OKD control plane.
+
+---
+
+### 6.6 Verify Worker Configuration
+
+Because the Worker nodes were provisioned directly through Terraform rather than through the OKD Machine API, the UPI configuration uses:
+
+```yaml
+compute:
+- ...
+  replicas: 0
+```
+
+This does **not** mean that the cluster will have zero Worker nodes.
+
+It means that the OKD installer is not being asked to provision Worker machines.
+
+The Worker VMs already exist as OCI Compute instances.
+
+The relationship is:
+
+```text
+Terraform
+   │
+   ▼
+OCI Worker VMs
+   │
+   ▼
+OKD Worker Configuration
+```
+
+---
+
+### 6.7 Verify Machine Network
+
+The machine network must match the network where the OKD nodes are located.
+
+For this lab:
+
+```yaml
+machineNetwork:
+- cidr: 10.0.2.0/24
+```
+
+Verify:
+
+```bash
+grep -A2 'machineNetwork:' install-config.yaml
+```
+
+Expected:
+
+```text
+machineNetwork:
+- cidr: 10.0.2.0/24
+```
+
+This corresponds to the OCI private subnet containing:
+
+```text
+Bootstrap
+Master-1
+Master-2
+Master-3
+Worker-1
+Worker-2
+```
+
+---
+
+### 6.8 Verify the Pull Secret
+
+The lab uses a dummy pull secret:
+
+```json
+{
+  "auths": {}
+}
+```
+
+Before placing it into `install-config.yaml`, verify that the pull secret is valid JSON:
+
+```bash
+python3 -m json.tool ~/pull-secret.json
+```
+
+Then use its contents for the `pullSecret` field.
+
+> Do not commit `install-config.yaml` to Git because it contains sensitive installation configuration.
+
+---
+
+### 6.9 Verify the SSH Public Key
+
+Check the public key:
+
+```bash
+cat ~/.ssh/id_rsa.pub
+```
+
+The key should be a single line beginning with a valid SSH key type such as:
+
+```text
+ssh-rsa
+```
+
+or:
+
+```text
+ssh-ed25519
+```
+
+The public key is placed in the `sshKey` field.
+
+The private key is never placed in `install-config.yaml`.
+
+---
+
+### 6.10 Validate the YAML File
+
+First verify that the file exists:
+
+```bash
+ls -lh install-config.yaml
+```
+
+Then inspect it:
+
+```bash
+cat install-config.yaml
+```
+
+Check the YAML structure carefully.
+
+Important values to verify:
+
+```text
+[ ] baseDomain = ocp.lab
+[ ] cluster name = okd
+[ ] platform = none
+[ ] controlPlane replicas = 3
+[ ] compute replicas = 0
+[ ] machineNetwork = 10.0.2.0/24
+[ ] networkType = OVNKubernetes
+[ ] pullSecret is present
+[ ] SSH public key is present
+```
+
+### 6.11 Important Security Check
+
+Before continuing, make sure the file is not tracked by Git:
+
+```bash
+git status --short --ignored install-config.yaml
+```
+
+The file should be ignored according to the repository's `.gitignore`.
+
+Never commit:
+
+```text
+install-config.yaml
+pull-secret.json
+*.ign
+kubeconfig
+```
+
+---
+
+### 6.12 Final Verification
+
+Before generating Ignition files, verify:
+
+```text
+Cluster:
+  Name       → okd
+  Base domain → ocp.lab
+
+Platform:
+  UPI / platform none
+
+Control Plane:
+  3 Masters
+
+Workers:
+  Provisioned separately by Terraform
+  compute replicas = 0
+
+Network:
+  Machine network → 10.0.2.0/24
+  Network plugin  → OVNKubernetes
+
+Credentials:
+  Dummy pull secret
+  SSH public key
+```
+
+Once `install-config.yaml` has been verified, it can be used to generate the OKD Ignition configuration files.
+
